@@ -17,6 +17,12 @@ var eventLoad = events[0],
 var singleton,
     prototype = 'prototype';
 
+function uuid () {
+    return 'xxxxxxxxxxxxxxxx'.replace(/[x]/g, function (c) {
+        const num = parseInt(Math.random() * 16);
+        return num.toString(16);
+    });
+}
 
 export function proxy(proxy) {
     if (singleton) throw "Proxy already exists";
@@ -205,6 +211,7 @@ function Proxy(proxy) {
                 // In 'onRequest', we may call XHR's event handler, such as `xhr.onload`.
                 // However, XHR's event handler may not be set until xhr.send is called in
                 // the user's code, so we use `setTimeout` to avoid this situation
+                config.headers["X-traceId"] = uuid();
                 var req = function () {
                     onRequest(config, new RequestHandler(xhr));
                 }

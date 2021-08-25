@@ -18,6 +18,9 @@ const TYPES = {
     record: "record",
 };
 
+const FourK = 4 * 1024;
+const TwleveK = 12 * 1024;
+
 /**
  * UIS 基类对象
  * API：trackEvent、treackError、start等
@@ -30,7 +33,9 @@ function UIS(){
         configCookieNamePrefix: '_pk_',
         siteId: '',
         userId: '',
-        visitorId: ''
+        isTrackClick: false,
+        visitorId: '',
+        traceId:""
     };
     this.isClickTrackingEnabled = false;
     this.isTrackingJqueryAjax = false;
@@ -438,6 +443,7 @@ UIS.fn.report = function (data, block, callback) {
         device: this.getDevice(),
         ...data
     }
+    this.setOption("traceId","")
     
     // Utils.post(this.getOption("trackerUrl"), reportData)
     if (navigator.sendBeacon) {
@@ -482,7 +488,7 @@ UIS.fn.getGeneralInfo = function () {
     let general = {
         host: window.location.host,
         // 全链路追踪的唯一id
-        traceId: "",
+        traceId: this.config.traceId,
         // 全链路追踪的name
         traceName: "",
         // 录制的唯一id ,从cookie里取值
@@ -503,7 +509,7 @@ UIS.fn.getGeneralInfo = function () {
         remoteMethod: "",
 
         // 应用appid
-        siteId: "",
+        siteId: this.config.siteId,
         pageTitle: window.document.title,
         // 节点URL
         url: window.location.href,
@@ -691,6 +697,9 @@ UIS.fn.trackHttpInfo = function () {
             config.startTime = Date.now()
             requestData = config;
             handler.next(config);
+            if(config.headers["X-traceId"]){
+                _self.setOption("traceId",config.headers["X-traceId"])
+            }
         },
         //请求发生错误时进入，比如超时；注意，不包括http状态码错误，如404仍然会认为请求成功
         onError: (err, handler) => {
@@ -721,7 +730,12 @@ UIS.fn._handleReport = function (request = {}, response, err) {
     if (response) {
         event.set('httpResStatus', response.status);
         event.set('httpResStatusText', response.statusText);
-        // event.set('httpResBody', response.response);
+        let resSize = this._getResponseSize(JSON.stringify(response.response))
+
+        if (resSize && resSize <= FourK) {
+            event.set('httpResSize', resSize);
+            event.set('httpResBody', response.response);
+        }
     }
 
     if (err) {
@@ -734,6 +748,20 @@ UIS.fn._handleReport = function (request = {}, response, err) {
         [TYPES.httpInfo]: event.getProperties()
     }
     this.report(reportData)
+}
+
+/**
+ * 获取response的字节数
+ * @param str
+ */
+UIS.fn._getResponseSize = function (str) {
+    let size = null
+    const twleveK = TwleveK;
+    if (str.length > twleveK) {
+        return size
+    }
+
+    return Utils.getStrSize(str)
 }
 
 /**
@@ -975,22 +1003,6 @@ UIS.fn.trackError = function() {
 }
 
 /**
- * @description 页面开始加载
- * @param {*} data
- */
-UIS.fn.pageStart = function (data) {
-    console.log("pageStart", data)
-}
-
-/**
- * @description 页面结束加载
- * @param {*} data
- */
-UIS.fn.pageEnd = function (data) {
-    console.log("pageEnd", data)
-}
-
-/**
  * SDK 初始化
  * @param {*} params 
  */
@@ -1004,8 +1016,14 @@ UIS.fn.start = function(params) {
     if (params['siteId']){
       this.setOption("siteId", params['siteId']);
     }
+    if (params['isTrackClick']) {
+        this.setOption("isTrackClick", params['isTrackClick']);
+    }
+
     // 会统计所有的点击事件，并触发信息提交
-    this.trackClicks();
+    if (this.getOption("isTrackClick")) {
+        this.trackClicks();
+    }
     // this.trackRouter();
     this.trackPageLoad();
     this.trackError();

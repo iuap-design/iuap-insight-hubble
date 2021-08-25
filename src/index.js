@@ -24,8 +24,7 @@ window.rrweb = rrwebAPI || {}
 window.monitor = monitor || {}
 
 uis.monitor = monitor
-
-// uis.rrweb = rrweb
+uis.rrweb = rrweb
 
 // Object.assign(uis, {hook, unHook, proxy, unProxy})
 
