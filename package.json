@@ -1,0 +1,43 @@
+{
+  "name": "iuap-insight",
+  "version": "2.0.3",
+  "description": "iuap-insight",
+  "main": "./lib/iuap-insight.min.js",
+  "scripts": {
+    "start": "webpack-dev-server --open --config webpack.dev.js",
+    "dev": "webpack -w --config webpack.prod.js",
+    "build": "webpack --config webpack.prod.js -p"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iuap-design/iuap-insight.git"
+  },
+  "keywords": [
+    "iuap",
+    "insight"
+  ],
+  "author": "GuoYongfeng",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iuap-design/iuap-insight/issues"
+  },
+  "homepage": "https://github.com/iuap-design/iuap-insight#readme",
+  "devDependencies": {
+    "@babel/core": "^7.11.1",
+    "@babel/plugin-transform-runtime": "^7.11.0",
+    "@babel/preset-env": "^7.11.0",
+    "babel-loader": "^8.1.0",
+    "babel-plugin-add-module-exports": "^1.0.2",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0",
+    "webpack-merge": "^5.1.1"
+  },
+  "dependencies": {
+    "js-base64": "2.1.9",
+    "moment": "^2.27.0",
+    "piwik": "^1.0.6",
+    "hubble-record": "1.0.0",
+    "rrweb": "^0.8.5"
+  }
+}
