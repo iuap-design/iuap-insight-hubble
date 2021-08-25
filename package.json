@@ -1,6 +1,6 @@
 {
   "name": "iuap-insight",
-  "version": "2.0.3",
+  "version": "2.0.0",
   "description": "iuap-insight",
   "main": "./lib/iuap-insight.min.js",
   "scripts": {

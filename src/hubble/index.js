@@ -46,15 +46,17 @@ class Hubble {
       timer: null,
 
       // 录制上报url
-      url: "https://developer.yonyoucloud.com/iuap-hubble-monitor/monitor/record",
+      url: "https://developer.yonyoucloud.com/hubble/monitor/record",
 
       //单点性能测试数据上报
       singlePointUrl: "https://developer.yonyoucloud.com/hubble/client-perform",
 
-      // 中间报告url 
-      reportUrl: `https://developer.yonyoucloud.com/hubble-web/index.html#/hubble-report`,
+      // 中间报告url
+      reportUrl: `https://developer.yonyoucloud.com/fe/hubble-new/index.html#/hubble-report`,
       //录制环境
-      env: ''
+      env: '',
+      // 上报js文件
+      recordCDN: "https://yonyoucloud-developer-center-docker-registry.oss-cn-beijing.aliyuncs.com/web/hubble-snapshot-record.js",
 
     };
 
@@ -200,48 +202,43 @@ class Hubble {
    * 设置Cookie
    */
   _setCookie(name, value, domain) {
-    var domainArr = ["yonyou.com", "diwork.com", "yonyoucloud.com", "yyuap.com"]
     var Days = 30;
     var exp = new Date();
     exp.setTime(exp.getTime() + Days * 24 * 60 * 60 * 30);
-    document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString() + ";path=/" + ";domain=" + domain + ";SameSite=None;Secure";
-    domainArr.forEach((domain_item) => {
-      document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString() + ";path=/" + ";domain=" + domain_item + ";SameSite=None;Secure";
-    })
-    // document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString() + ";path=/" + ";domain=" + domain + ";";
+    // document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString() + ";path=/" + ";domain=" + domain + ";SameSite=None;Secure";
+    document.cookie = name + "=" + escape(value) + ";expires=" + exp.toGMTString() + ";path=/" + ";domain=" + domain + ";";
   }
-
 
   /**
    * 获取主域名
    */
   _getMainHost() {
-    // return document.domain;
-    let key = `mh_${Math.random()}`;
-    let keyR = new RegExp(`(^|;)\\s*${key}=12345`);
-    let expiredTime = new Date(0);
-    let domain = document.domain;
-    let domainList = domain.split('.');
+    return document.domain;
+    // let key = `mh_${Math.random()}`;
+    // let keyR = new RegExp(`(^|;)\\s*${key}=12345`);
+    // let expiredTime = new Date(0);
+    // let domain = document.domain;
+    // let domainList = domain.split('.');
 
-    let urlItems = [];
-    // 主域名一定会有两部分组成
-    urlItems.unshift(domainList.pop());
-    let mainHost = null;
-    // 慢慢从后往前测试
-    while (domainList.length) {
-      urlItems.unshift(domainList.pop());
-      mainHost = urlItems.join('.');
-      let cookie = `${key}=${12345};domain=.${mainHost}`;
+    // let urlItems = [];
+    // // 主域名一定会有两部分组成
+    // urlItems.unshift(domainList.pop());
+    // let mainHost = null;
+    // // 慢慢从后往前测试
+    // while (domainList.length) {
+    //   urlItems.unshift(domainList.pop());
+    //   mainHost = urlItems.join('.');
+    //   let cookie = `${key}=${12345};domain=.${mainHost}`;
 
-      document.cookie = cookie;
+    //   document.cookie = cookie;
 
-      //如果cookie存在，则说明域名合法
-      if (keyR.test(document.cookie)) {
-        document.cookie = `${cookie};expires=${expiredTime}`;
-        return mainHost;
-      }
-    }
-    return mainHost || document.domain
+    //   //如果cookie存在，则说明域名合法
+    //   if (keyR.test(document.cookie)) {
+    //     document.cookie = `${cookie};expires=${expiredTime}`;
+    //     return mainHost;
+    //   }
+    // }
+    // return mainHost || document.domain
   }
 
 
@@ -255,15 +252,10 @@ class Hubble {
 
     clearTimeout(this._getConfig("timer"))
     this._setConfig("timer", null)
-    let mdd_monitor_record = this._getCookie("mdd_monitor_record");
-    if (mdd_monitor_record) {
-      let reportUrl = `${this.config.reportUrl}?uid=${this._getCookie("mdd_monitor_uid")}`
-      window.open(reportUrl);
-      this._setCookie("mdd_monitor_uid", "", this._getMainHost())
-      this._setCookie("mdd_monitor_record", "false", this._getMainHost())
-    }
-  }
 
+    let reportUrl = `${this.config.reportUrl}?uid=${this._getCookie("mdd_monitor_uid")}`
+    window.open(reportUrl)
+  }
 
   /**
    * 初始化录屏的静态资源脚本
@@ -272,20 +264,26 @@ class Hubble {
     if (document.getElementById("hubble-snapshot-record")) {
       return
     }
-    var _this = this;
-    var recordCDN = "https://yonyoucloud-developer-center-docker-registry.oss-cn-beijing.aliyuncs.com/web/hubble-snapshot-record.js"
+    // var recordCDN = "https://yonyoucloud-developer-center-docker-registry.oss-cn-beijing.aliyuncs.com/web/hubble-snapshot-record.js"
+    var recordCDN = this.config.recordCDN;
     var snapShotScript = document.createElement("script")
     snapShotScript.id = "hubble-snapshot-record"
     snapShotScript.src = recordCDN
     document.body.appendChild(snapShotScript)
-
-    //浏览器关闭
-    window.onbeforeunload = function (e) {
-      var e = window.event || e;
-      _this._stopByTimer();
-    }
   }
 
+  /**
+   * 私有化时的初始化
+   */
+  privateInit({ domain = "" }) {
+    if (domain) {
+      this._setConfig("url", `${domain}/hubble/monitor/record`)
+      this._setScreenConfig("screenUrl", `${domain}/screencap/screenDetail.uploadScreenData`)
+      this._setConfig("recordCDN", `${domain}/fe/lib/hubble-snapshot-record.js`)
+      this._setConfig("reportUrl", `${domain}/fe/hubble-new/index.html#/hubble-report`)
+      this._setConfig("singlePointUrl", `${domain}/hubble/client-perform`)
+    }
+  }
   /**
    * 开始录屏
    */
@@ -405,13 +403,15 @@ class Hubble {
     }
     this._toggleRecord()
 
-    this._setScreenConfig("isEnable", !!isEnableScreen)
+    // this._setScreenConfig("isEnable", !!isEnableScreen)   
+    this._setScreenConfig("isEnable", false);  //私有化环境环境注释掉录屏上报
+
     if (!!isEnableScreen) {
       console.log("enable screen")
-      this._startRecordScreen()
+      // this._startRecordScreen() //私有化环境注释掉录屏上报
     }
     this.config.timer = setTimeout(() => {
-      this._stopByTimer();
+      this._stopByTimer()
     }, 1000 * 60 * 5);
   }
 
@@ -451,9 +451,10 @@ class Hubble {
 
 
   /**
-   * 查询开始时间和结束时间
-   */
+* 查询开始时间和结束时间
+*/
   getTimeRange(item) {
+
     console.log("单点性能测试开始", item)
     post(`${this.config.singlePointUrl}`, item, () => { console.log("上报成功") })
   }

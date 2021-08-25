@@ -50,8 +50,5 @@ start 初始化参数：
     uis.track(e, 'click_text', '设置的信息')
   })
 </script>
-
-
-共有云 release 分支
 ```
 
