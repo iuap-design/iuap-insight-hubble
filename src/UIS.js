@@ -35,7 +35,8 @@ function UIS(){
         userId: '',
         isTrackClick: false,
         visitorId: '',
-        traceId:""
+        traceId:"",
+        blackList:[]
     };
     this.isClickTrackingEnabled = false;
     this.isTrackingJqueryAjax = false;
@@ -615,7 +616,7 @@ UIS.fn.clickEventHandler = function(e, isComstomClickText) {
     }
     // 设置点击时候的信息
     if ( isComstomClickText ) {
-      var click_text_value = uis.getOption('clickText')
+      var click_text_value = this.getOption('click_text')
       click.set('clickText', click_text_value);
     } else {
       click.set('clickText', targ.innerText);
@@ -711,7 +712,8 @@ UIS.fn.trackHttpInfo = function () {
         onResponse: (response, handler) => {
             _self._handleReport(requestData, response)
             handler.next(response)
-        }
+        },
+        blackList:_self.config['blackList']
     })
 }
 
@@ -734,7 +736,7 @@ UIS.fn._handleReport = function (request = {}, response, err) {
 
         if (resSize && resSize <= FourK) {
             event.set('httpResSize', resSize);
-            event.set('httpResBody', response.response);
+            event.set('httpResBody', JSON.stringify(response.response));
         }
     }
 
@@ -1018,6 +1020,9 @@ UIS.fn.start = function(params) {
     }
     if (params['isTrackClick']) {
         this.setOption("isTrackClick", params['isTrackClick']);
+    }
+    if (params['blackList'] && params['blackList'].length>0) {
+        this.setOption("blackList", params['blackList']);
     }
 
     // 会统计所有的点击事件，并触发信息提交
